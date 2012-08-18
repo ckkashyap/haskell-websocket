@@ -33,7 +33,7 @@ executable websocket-client
 
 executable websocket-server
   hs-source-dirs:      src/test, src/lib
-  build-depends:       base ==4.5.*
+  build-depends:       base ==4.5.* , bytestring ==0.9.*, network ==2.3.*
   other-modules:       Net.WebSocket
   main-is:             Server.hs
   ghc-options:         -Wall
