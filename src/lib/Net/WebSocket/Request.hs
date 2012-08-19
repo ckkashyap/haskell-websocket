@@ -5,6 +5,7 @@ import qualified System.IO as SI
 import qualified Control.Monad as CM
 import qualified Control.Monad.Trans as CMT
 import qualified Control.Monad.Trans.Error as CMTE
+import qualified Data.Char as DC
 
 
 data Request = Request {firstLine :: String, header :: [(String,String)]}
@@ -27,16 +28,6 @@ readRequest handle = do
 	
 
 
-
-
---do
---	r <- CMTE.ErrorT $ readRequest' handle
---	let action = case r of
---			Left error -> putStrLn error
---			Right _ -> putStrLn "Parsed the request successfully"
---	CMT.lift action
---	return (Request "" [])
-
 readRequest' :: SI.Handle -> CMTE.ErrorT String IO Request
 readRequest' handle = do
 	fl <- CMTE.ErrorT (readFirstRequestLine handle)
@@ -55,20 +46,26 @@ readHeader h = do
   rawLine <- SI.hGetLine h
   let hdr = takeWhile (/= ':') rawLine
   let val = takeWhile (/= '\r') $ drop (length hdr + 2) rawLine
-  (Right rest) <- if hdr /= "\r" then readHeader h else return (Right [])
-  let headers = (hdr,val):rest
-  return (validate headers)
- 
+  rest' <- if hdr /= "\r" then readHeader h else return (Right [])
+  let valid = case rest' of
+                   Right _ -> True
+		   Left _ -> False
+  if valid then do
+	  let (Right rest) = rest'
+	  let headers = (map DC.toUpper hdr,val):rest
+          return (validate headers)
+	  else return rest'
+
 
 validateFirstLine :: String -> Either String String
 validateFirstLine l = if take 3 l == "GET" then Right l else  Left $ "The first line of the request if faulty: " ++ l
 
---getHeaderValue :: Request -> String -> Either String String
---getHeaderValue _ [] = []               
---getHeaderValue h (s:ss) = if rightHeader then extractKey else getHeaderValue h ss where
---                             headerField = h ++ ": "
---                             lengthOfHeaderField = length headerField
---                             extractKey = drop lengthOfHeaderField s
---                             rightHeader = (take lengthOfHeaderField s) == headerField
+getHeaderValue :: Request -> String -> Either String String
+getHeaderValue (Request _ []) key = Left $ "Could not find " ++ key                
+getHeaderValue (Request _ ((k,v):ss)) key = if rightHeader then Right v else getHeaderValue  (Request "" ss) key where
+                             rightHeader = (map DC.toUpper key) == k
 
-validate x = Right x  
+validate :: [(String, String)] -> Either String [(String,String)]
+validate x = do
+	--upgrade <- getHeaderValue (Request "" x) "A"
+	Right x
