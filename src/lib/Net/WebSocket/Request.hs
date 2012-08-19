@@ -43,19 +43,23 @@ readFirstRequestLine handle = do
 
 readHeader :: SI.Handle -> IO (Either String [(String, String)])
 readHeader h = do
-  rawLine <- SI.hGetLine h
-  let hdr = takeWhile (/= ':') rawLine
-  let val = takeWhile (/= '\r') $ drop (length hdr + 2) rawLine
-  rest' <- if hdr /= "\r" then readHeader h else return (Right [])
-  let valid = case rest' of
-                   Right _ -> True
-		   Left _ -> False
-  if valid then do
-	  let (Right rest) = rest'
-	  let headers = (map DC.toUpper hdr,val):rest
-          return (validate headers)
-	  else return rest'
+  headerLines <- readHeaderLines h
+  let h = headerLines2values headerLines
+  return (validate h)
 
+
+readHeaderLines :: SI.Handle -> IO [String]
+readHeaderLines h = do
+	l <- SI.hGetLine h
+	if l == "\r" then return [] else do
+		                           r <- readHeaderLines h
+					   return (l:r)
+
+headerLines2values :: [String] -> [(String, String)]
+headerLines2values [] = []
+headerLines2values (x:xs) = let hdr = map DC.toUpper $ takeWhile (/= ':') x
+                                val = takeWhile (/= '\r') $ drop (length hdr + 2) x
+				in (hdr,val):headerLines2values xs
 
 validateFirstLine :: String -> Either String String
 validateFirstLine l = if take 3 l == "GET" then Right l else  Left $ "The first line of the request if faulty: " ++ l
@@ -67,5 +71,5 @@ getHeaderValue (Request _ ((k,v):ss)) key = if rightHeader then Right v else get
 
 validate :: [(String, String)] -> Either String [(String,String)]
 validate x = do
-	--upgrade <- getHeaderValue (Request "" x) "A"
+	upgrade <- getHeaderValue (Request "" x) "UPGRADE"
 	Right x
