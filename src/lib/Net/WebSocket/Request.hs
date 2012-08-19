@@ -72,4 +72,5 @@ getHeaderValue (Request _ ((k,v):ss)) key = if rightHeader then Right v else get
 validate :: [(String, String)] -> Either String [(String,String)]
 validate x = do
 	upgrade <- getHeaderValue (Request "" x) "UPGRADE"
-	Right x
+	connection <- getHeaderValue (Request "" x) "CONNECTION"
+	if connection == "Upgrade" then Right x else Left "Invalid connection"
