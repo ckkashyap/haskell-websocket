@@ -20,20 +20,20 @@ library
   hs-source-dirs:      src/lib
   exposed-modules:     Net.WebSocket
   ghc-options:         -Wall
-  build-depends:       base ==4.5.*
+  build-depends:       base ==4.5.*, transformers ==0.2.* , mtl ==2.0.* 
 
 
-executable websocket-client
-  hs-source-dirs:      src/test, src/lib
-  build-depends:       base ==4.5.*
-  other-modules:       Net.WebSocket
-  main-is:             Client.hs
-  ghc-options:         -Wall
+--executable websocket-client
+--  hs-source-dirs:      src/test, src/lib
+--  build-depends:       base ==4.5.*
+--  other-modules:       Net.WebSocket
+--  main-is:             Client.hs
+--  ghc-options:         -Wall
 
 
 executable websocket-server
   hs-source-dirs:      src/test, src/lib
-  build-depends:       base ==4.5.* , bytestring ==0.9.*, network ==2.3.*
+  build-depends:       base ==4.5.* , bytestring ==0.9.*, network ==2.3.*, transformers ==0.2.* , mtl ==2.0.*
   other-modules:       Net.WebSocket
   main-is:             Server.hs
   ghc-options:         -Wall
